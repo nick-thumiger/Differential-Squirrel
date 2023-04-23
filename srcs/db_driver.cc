@@ -170,9 +170,25 @@ int main(int argc, char *argv[]) {
   }
   YAML::Node config = YAML::LoadFile(config_file_path);
   std::string db_name = config["db"].as<std::string>();
-  std::string startup_cmd = config["startup_cmd"].as<std::string>();
-  client::DBClient *database = client::create_client(db_name, config);
-  database->initialize(config);
+
+  // Extract port number(s)
+  std::vector<std::string> ports{};
+  if (config["ports"].IsSequence()) {
+    for (std::size_t i = 0; i < config["should_exist"].size(); i++) {
+      ports.push_back(config["ports"].as<YAML::Node>()[i].as<std::string>());
+    }
+  } else {
+    ports.push_back(config["ports"].as<std::string>())
+  }
+
+  std::vector<client::DBClient *> databases{};
+  for (const auto port : ports){
+    std::string startup_cmd = config["startup_cmd"].as<std::string>() + "--port=" + port + " &";
+    client::DBClient *database = client::create_client(db_name, config);
+    database->initialize(config);
+    databases.push_back(database);
+  }
+  
 
   /* This is were the testcase data is written into */
   constexpr size_t kMaxInputSize = 0x100000;
@@ -187,29 +203,34 @@ int main(int argc, char *argv[]) {
   // Start the database server. In case that the driver
   // is stopped and restarted, we should not start another server.
   __afl_map_shm();
-  if (!database->check_alive()) {
-    system(startup_cmd.c_str());
-    sleep(5);
+  for (const auto database : databases){
+    if (!database->check_alive()) {
+      system(startup_cmd.c_str());
+      sleep(5);
+    }
   }
 
   __afl_start_forkserver();
 
   while ((len = __afl_next_testcase(buf, kMaxInputSize)) > 0) {
     std::string query((const char *)buf, len);
-    database->prepare_env();
+    for (const auto database : databases){
+      database->prepare_env();
 
-    client::ExecutionStatus status = database->execute((const char *)buf, len);
+      client::ExecutionStatus status = database->execute((const char *)buf, len);
+
+      if (status == client::kServerCrash) {
+        while (!database->check_alive()) {
+          // Wait for the server to be restart.
+          sleep(5);
+        }
+      }
+      database->clean_up_env();
+    }
 
     __afl_area_ptr[0] = 1;
     /* report the test case is done and wait for the next */
 
-    if (status == client::kServerCrash) {
-      while (!database->check_alive()) {
-        // Wait for the server to be restart.
-        sleep(5);
-      }
-    }
-    database->clean_up_env();
     __afl_end_testcase(status);
   }
   assert(false && "Crash on parent?");

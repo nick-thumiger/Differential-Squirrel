@@ -21,12 +21,13 @@ bool is_crash_response(int response) {
 
 namespace client {
 
-void MySQLClient::initialize(YAML::Node config) {
+void MySQLClient::initialize(YAML::Node config, const std::string port) {
   host_ = config["host"].as<std::string>();
   user_name_ = config["user_name"].as<std::string>();
   passwd_ = config["passwd"].as<std::string>();
   sock_path_ = config["sock_path"].as<std::string>();
   db_prefix_ = config["db_prefix"].as<std::string>();
+  port_ = port;
 }
 
 void MySQLClient::prepare_env() {
@@ -76,7 +77,7 @@ std::optional<MYSQL> MySQLClient::create_connection(std::string_view db_name) {
   if (mysql_init(&result) == NULL) return std::nullopt;
 
   if (mysql_real_connect(&result, host_.c_str(), user_name_.c_str(),
-                         passwd_.c_str(), db_name.data(), 0, sock_path_.c_str(),
+                         passwd_.c_str(), db_name.data(), port_, sock_path_.c_str(),
                          CLIENT_MULTI_STATEMENTS) == NULL) {
     std::cerr << "Create connection failed: " << mysql_errno(&result)
               << mysql_error(&result) << std::endl;

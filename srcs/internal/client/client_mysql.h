@@ -13,7 +13,7 @@ namespace client {
 
 class MySQLClient : public DBClient {
  public:
-  virtual void initialize(YAML::Node);
+  virtual void initialize(YAML::Node, const std::string port);
   // Set up a clean environment for execution.
   virtual void prepare_env();
   virtual ExecutionStatus execute(const char *query, size_t size);
@@ -23,7 +23,7 @@ class MySQLClient : public DBClient {
  private:
   ExecutionStatus clean_up_connection(MYSQL &);
   bool create_database(const std::string &database);
-  std::optional<MYSQL> create_connection(const std::string_view db_name);
+  std::optional<MYSQL> create_connection(const std::string_view db_name, const std::string port);
 
   unsigned int database_id_ = 0;
   std::string host_;
@@ -31,6 +31,7 @@ class MySQLClient : public DBClient {
   std::string passwd_;
   std::string sock_path_;
   std::string db_prefix_;
+  std::string port_;
 };
 
 };  // namespace client

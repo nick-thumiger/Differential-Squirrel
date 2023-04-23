@@ -12,7 +12,7 @@ namespace client {
 
 class PostgreSQLClient : public DBClient {
  public:
-  virtual void initialize(YAML::Node);
+  virtual void initialize(YAML::Node, const std::string);
   // Set up a clean environment for execution.
   virtual void prepare_env();
   virtual ExecutionStatus execute(const char *query, size_t size);
@@ -27,6 +27,7 @@ class PostgreSQLClient : public DBClient {
   std::string passwd_;
   std::string sock_path_;
   std::string db_name_;
+  std::string port_;
 };
 
 };  // namespace client

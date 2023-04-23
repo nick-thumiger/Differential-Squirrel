@@ -15,10 +15,10 @@
 
 using namespace std;
 namespace {
-PGconn *create_connection(std::string_view db_name) {
+PGconn *create_connection(std::string_view db_name, const std::string port) {
   std::string conninfo =
       absl::StrFormat("hostaddr=%s port=%d dbname=%s connect_timeout=4",
-                      "127.0.0.1", 5432, db_name);
+                      "127.0.0.1", port, db_name);
 
   std::cerr << "Connection info: " << conninfo << std::endl;
   PGconn *result = PQconnectdb(conninfo.c_str());
@@ -37,23 +37,24 @@ void reset_database(PGconn *conn) {
 
 namespace client {
 
-void PostgreSQLClient::initialize(YAML::Node config) {
+void PostgreSQLClient::initialize(YAML::Node config, const std::string port) {
   host_ = config["host"].as<std::string>();
   port_ = config["port"].as<std::string>();
   user_name_ = config["user_name"].as<std::string>();
   passwd_ = config["passwd"].as<std::string>();
   db_name_ = config["db_name"].as<std::string>();
+  port_ = port;
   std::cerr << "Sock path: " << sock_path_ << std::endl;
 }
 
 void PostgreSQLClient::prepare_env() {
-  PGconn *conn = create_connection(db_name_);
+  PGconn *conn = create_connection(db_name_, port_);
   reset_database(conn);
   PQfinish(conn);
 }
 
 ExecutionStatus PostgreSQLClient::execute(const char *query, size_t size) {
-  auto conn = create_connection(db_name_);
+  auto conn = create_connection(db_name_, port_);
 
   if (PQstatus(conn) != CONNECTION_OK) {
     fprintf(stderr, "Error2: %s\n", PQerrorMessage(conn));
