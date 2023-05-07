@@ -204,7 +204,7 @@ int main(int argc, char *argv[]) {
   __afl_map_shm();
   for (int i = 0; i < databases.size(); i++){
     if (!databases[i]->check_alive()) {
-      std::string startup_cmd = config["startup_cmd"].as<std::string>() + "--port=" + ports[i] + " &";
+      std::string startup_cmd = config["startup_cmd"].as<std::string>() + " --port=" + ports[i] + " &";
       system(startup_cmd.c_str());
       sleep(5);
     }
