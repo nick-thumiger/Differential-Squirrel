@@ -2,3 +2,9 @@ build
 output
 .cache
 Testing
+_deps
+.github
+.vscode
+bin
+CMakeFiles
+

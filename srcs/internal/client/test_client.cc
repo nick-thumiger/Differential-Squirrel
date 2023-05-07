@@ -12,7 +12,7 @@ int main(int argc, char **argv) {
   std::string db_name = config["db"].as<std::string>();
   // client::PostgreSQLClient *test_client = new client::PostgreSQLClient;
   client::DBClient *test_client = client::create_client(db_name, config);
-  test_client->initialize(config, config["ports"].as<YAML::Node>()[0].as<std::string>());
+  test_client->initialize(config, 0);
   /*
   if (test_client.connect()) {
     std::cout << "Success!" << std::endl;

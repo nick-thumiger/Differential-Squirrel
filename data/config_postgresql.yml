@@ -8,5 +8,5 @@ passwd: ''
 user_name: dobigthing
 db_name: postgres
 host: localhost
-port: 5432
+ports: ["5432"]
 startup_cmd: "/usr/local/pgsql/bin/postgres -D /usr/local/pgsql/data"

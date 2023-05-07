@@ -7,8 +7,13 @@ db: mysql
 passwd: ''
 user_name: dobigthing
 host: localhost
-sock_path: /tmp/mysql.sock
+sock_paths: ["/tmp/mysql.sock", "/tmp/mysql2.sock"]
 db_prefix: test
 ports: ["20000", "30000"]
+executables: ["/usr/local/mysql/bin/mysqld", "/usr/local/mysql2/bin/mysqld"]
+basedirs: ["/usr/local/mysql", "/usr/local/mysql2"]
+datadirs: ["/usr/local/mysql/data", "/usr/local/mysql2/data"]
+pid_files: ["server_pid.pid", "server_pid2.pid"]
+
 # It is important that the command should run on background
-startup_cmd: "/usr/local/mysql/bin/mysqld --basedir=/usr/local/mysql --datadir=/usr/local/mysql/data --log-error=err_log.err --pid-file=server_pid.pid --max_statement_time=1"
+startup_cmd: " --log-error=err_log.err  --max_statement_time=1 &"

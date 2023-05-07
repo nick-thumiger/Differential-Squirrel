@@ -171,20 +171,10 @@ int main(int argc, char *argv[]) {
   YAML::Node config = YAML::LoadFile(config_file_path);
   std::string db_name = config["db"].as<std::string>();
 
-  // Extract port number(s)
-  std::vector<std::string> ports{};
-  if (config["ports"].IsSequence()) {
-    for (std::size_t i = 0; i < config["should_exist"].size(); i++) {
-      ports.push_back(config["ports"].as<YAML::Node>()[i].as<std::string>());
-    }
-  } else {
-    ports.push_back(config["ports"].as<std::string>());
-  }
-
   std::vector<client::DBClient *> databases{};
-  for (const auto port : ports){
+  for (int database_number = 0; database_number < 2; database_number++){
     client::DBClient *database = client::create_client(db_name, config);
-    database->initialize(config, port);
+    database->initialize(config, database_number);
     databases.push_back(database);
   }
   
@@ -204,7 +194,7 @@ int main(int argc, char *argv[]) {
   __afl_map_shm();
   for (int i = 0; i < databases.size(); i++){
     if (!databases[i]->check_alive()) {
-      std::string startup_cmd = config["startup_cmd"].as<std::string>() + " --port=" + ports[i] + " &";
+      std::string startup_cmd = databases[i]->get_startup_command();
       system(startup_cmd.c_str());
       sleep(5);
     }

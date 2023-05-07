@@ -21,14 +21,33 @@ bool is_crash_response(int response) {
 
 namespace client {
 
-void MySQLClient::initialize(YAML::Node config, const std::string port) {
+void MySQLClient::initialize(YAML::Node config, int database_number) {
   host_ = config["host"].as<std::string>();
   user_name_ = config["user_name"].as<std::string>();
   passwd_ = config["passwd"].as<std::string>();
-  sock_path_ = config["sock_path"].as<std::string>();
   db_prefix_ = config["db_prefix"].as<std::string>();
-  port_ = port;
+  auto get_from_config = [&config](const std::string &field, int index) -> std::string {
+    if (config[field] && config[field].IsSequence() && index >= 0 && index < config[field].size()) {
+      return config[field][index].as<std::string>();
+    } else {
+      throw std::out_of_range("Invalid index or missing field '" + field + "' in the configuration");
+    }
+  };
+
+  port_ = get_from_config("ports", database_number);
+  executable = get_from_config("executables", database_number);
+  basedir = get_from_config("basedirs", database_number);
+  datadir = get_from_config("datadirs", database_number);
+  pid_file = get_from_config("pid_files", database_number);
+  sock_path_ = get_from_config("sock_paths", database_number);
+  extra_running_parameters = config["startup_cmd"].as<std::string>();
+  startup_command = executable + " --socket=" + sock_path_ + " --pid_file=" + pid_file + " --port=" + port_ + " --basedir=" + basedir + " --datadir=" + datadir + extra_running_parameters;
 }
+
+std::string MySQLClient::get_startup_command() {
+  return startup_command;
+}
+
 
 void MySQLClient::prepare_env() {
   ++database_id_;

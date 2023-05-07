@@ -20,8 +20,9 @@ enum ExecutionStatus {
 
 class DBClient {
  public:
-  virtual void initialize(YAML::Node, const std::string port) = 0;
+  virtual void initialize(YAML::Node, const int database_number) = 0;
   virtual bool check_alive() = 0;
+  virtual std::string get_startup_command() = 0;
   // Set up a clean environment for execution.
   virtual void prepare_env() = 0;
   virtual ExecutionStatus execute(const char *query, size_t size) = 0;
