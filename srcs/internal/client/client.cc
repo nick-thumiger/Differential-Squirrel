@@ -27,7 +27,6 @@ DBClient *create_client(const std::string &db_name, const YAML::Node &config) {
   }
   assert(result && "It is not supported!");
 
-  result->initialize(config);
   return result;
 }
 };  // namespace client

@@ -17,7 +17,7 @@ using namespace std;
 namespace {
 PGconn *create_connection(std::string_view db_name, const std::string port) {
   std::string conninfo =
-      absl::StrFormat("hostaddr=%s port=%d dbname=%s connect_timeout=4",
+      absl::StrFormat("hostaddr=%s port=%s dbname=%s connect_timeout=4",
                       "127.0.0.1", port, db_name);
 
   std::cerr << "Connection info: " << conninfo << std::endl;

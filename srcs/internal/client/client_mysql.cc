@@ -77,7 +77,7 @@ std::optional<MYSQL> MySQLClient::create_connection(std::string_view db_name) {
   if (mysql_init(&result) == NULL) return std::nullopt;
 
   if (mysql_real_connect(&result, host_.c_str(), user_name_.c_str(),
-                         passwd_.c_str(), db_name.data(), port_, sock_path_.c_str(),
+                         passwd_.c_str(), db_name.data(), std::stoi(port_), sock_path_.c_str(),
                          CLIENT_MULTI_STATEMENTS) == NULL) {
     std::cerr << "Create connection failed: " << mysql_errno(&result)
               << mysql_error(&result) << std::endl;

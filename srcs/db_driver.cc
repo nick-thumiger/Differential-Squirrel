@@ -178,14 +178,13 @@ int main(int argc, char *argv[]) {
       ports.push_back(config["ports"].as<YAML::Node>()[i].as<std::string>());
     }
   } else {
-    ports.push_back(config["ports"].as<std::string>())
+    ports.push_back(config["ports"].as<std::string>());
   }
 
   std::vector<client::DBClient *> databases{};
   for (const auto port : ports){
-    std::string startup_cmd = config["startup_cmd"].as<std::string>() + "--port=" + port + " &";
     client::DBClient *database = client::create_client(db_name, config);
-    database->initialize(config);
+    database->initialize(config, port);
     databases.push_back(database);
   }
   
@@ -203,8 +202,9 @@ int main(int argc, char *argv[]) {
   // Start the database server. In case that the driver
   // is stopped and restarted, we should not start another server.
   __afl_map_shm();
-  for (const auto database : databases){
-    if (!database->check_alive()) {
+  for (int i = 0; i < databases.size(); i++){
+    if (!databases[i]->check_alive()) {
+      std::string startup_cmd = config["startup_cmd"].as<std::string>() + "--port=" + ports[i] + " &";
       system(startup_cmd.c_str());
       sleep(5);
     }
@@ -214,10 +214,11 @@ int main(int argc, char *argv[]) {
 
   while ((len = __afl_next_testcase(buf, kMaxInputSize)) > 0) {
     std::string query((const char *)buf, len);
+    client::ExecutionStatus status;
     for (const auto database : databases){
       database->prepare_env();
 
-      client::ExecutionStatus status = database->execute((const char *)buf, len);
+      status = database->execute((const char *)buf, len);
 
       if (status == client::kServerCrash) {
         while (!database->check_alive()) {
@@ -231,6 +232,7 @@ int main(int argc, char *argv[]) {
     __afl_area_ptr[0] = 1;
     /* report the test case is done and wait for the next */
 
+    // TODO change which status variable is received
     __afl_end_testcase(status);
   }
   assert(false && "Crash on parent?");

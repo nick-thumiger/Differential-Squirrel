@@ -1,4 +1,4 @@
-from ubuntu:22.04
+From ubuntu:22.04
 LABEL maintainer="Squirrel"
 
 # common config
