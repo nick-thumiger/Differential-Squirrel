@@ -25,7 +25,7 @@ class DBClient {
   virtual std::string get_startup_command() = 0;
   // Set up a clean environment for execution.
   virtual void prepare_env() = 0;
-  virtual ExecutionStatus execute(const char *query, size_t size) = 0;
+  virtual std::string execute(const char *query, size_t size) = 0;
   virtual void clean_up_env() {}
 };
 

@@ -15,6 +15,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <memory>
 #include <iostream>
 
 #include "absl/strings/str_format.h"
@@ -150,9 +151,9 @@ static u32 __afl_next_testcase(u8 *buf, u32 max_len) {
   return status;
 }
 
-static void __afl_end_testcase(client::ExecutionStatus status) {
+static void __afl_end_testcase(std::string status) {
   int waitpid_status = 0xffffff;
-  if (status == client::kServerCrash) {
+  if (status == "kServerCrash") {
     waitpid_status = 0x6;  // raise.
   }
 
@@ -204,18 +205,30 @@ int main(int argc, char *argv[]) {
 
   while ((len = __afl_next_testcase(buf, kMaxInputSize)) > 0) {
     std::string query((const char *)buf, len);
-    client::ExecutionStatus status;
+    std::string status;
+
+    std::string first_status = "";
+
     for (const auto database : databases){
       database->prepare_env();
 
       status = database->execute((const char *)buf, len);
 
-      if (status == client::kServerCrash) {
+      if (first_status == "") {
+        first_status = status;
+      } else if (status != first_status) {
+        status = "kServerCrash";
+        break;
+      }
+
+      if (status == "kServerCrash") {
         while (!database->check_alive()) {
           // Wait for the server to be restart.
           sleep(5);
         }
       }
+
+
       database->clean_up_env();
     }
 

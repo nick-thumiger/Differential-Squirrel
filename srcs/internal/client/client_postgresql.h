@@ -16,7 +16,7 @@ class PostgreSQLClient : public DBClient {
   // Set up a clean environment for execution.
   virtual void prepare_env();
   virtual std::string get_startup_command();
-  virtual ExecutionStatus execute(const char *query, size_t size);
+  virtual std::string execute(const char *query, size_t size);
   virtual void clean_up_env();
   virtual bool check_alive();
 

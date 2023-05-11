@@ -64,13 +64,13 @@ std::string PostgreSQLClient::get_startup_command() {
   return "";
 }
 
-ExecutionStatus PostgreSQLClient::execute(const char *query, size_t size) {
+std::string PostgreSQLClient::execute(const char *query, size_t size) {
   auto conn = create_connection(db_name_);
 
   if (PQstatus(conn) != CONNECTION_OK) {
     fprintf(stderr, "Error2: %s\n", PQerrorMessage(conn));
     PQfinish(conn);
-    return kServerCrash;
+    return "kServerCrash";
   }
 
   std::string cmd(query, size);
@@ -79,7 +79,7 @@ ExecutionStatus PostgreSQLClient::execute(const char *query, size_t size) {
   if (PQstatus(conn) != CONNECTION_OK) {
     fprintf(stderr, "Error3: %s\n", PQerrorMessage(conn));
     PQclear(res);
-    return kServerCrash;
+    return "kServerCrash";
   }
 
   if (PQresultStatus(res) != PGRES_COMMAND_OK &&
@@ -87,11 +87,11 @@ ExecutionStatus PostgreSQLClient::execute(const char *query, size_t size) {
     fprintf(stderr, "Error4: %s\n", PQerrorMessage(conn));
     PQclear(res);
     PQfinish(conn);
-    return kExecuteError;
+    return "kExecuteError";
   }
   PQclear(res);
   PQfinish(conn);
-  return kNormal;
+  return "kNormal";
 }
 
 void PostgreSQLClient::clean_up_env() {}

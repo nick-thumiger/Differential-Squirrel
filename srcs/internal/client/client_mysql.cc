@@ -57,7 +57,7 @@ void MySQLClient::prepare_env() {
   }
 }
 
-ExecutionStatus MySQLClient::execute(const char *query, size_t size) {
+std::string MySQLClient::execute(const char *query, size_t size) {
   // Create a connection for executing the query
   // Check the response.
   // Return status accordingly.
@@ -65,17 +65,36 @@ ExecutionStatus MySQLClient::execute(const char *query, size_t size) {
   std::optional<MYSQL> connection = create_connection(database_name);
   if (!connection.has_value()) {
     std::cerr << "Cannot creat connection at execute " << std::endl;
-    return kServerCrash;
+    return "kServerCrash";
   }
 
   int server_response = mysql_real_query(&(*connection), query, size);
   if (is_crash_response(server_response)) {
     std::cerr << "Cannot mySQL_QUERY " << std::endl;
-    return kServerCrash;
+    return "kServerCrash";
   }
+
+  MYSQL_RES *result = mysql_store_result(&(*connection));
+  
+  std::string rows;
+  if (result) {  // a SELECT query, rows were returned
+    MYSQL_ROW row;
+    while ((row = mysql_fetch_row(result))) {
+      unsigned long *lengths = mysql_fetch_lengths(result);
+      for (unsigned int i = 0; i < mysql_num_fields(result); i++) {
+        rows += std::string(row[i], lengths[i]);
+      }
+    }
+    mysql_free_result(result);
+    mysql_close(&(*connection));
+  } else {
+    int affected_rows = mysql_affected_rows(&(*connection));
+    rows = std::to_string(affected_rows);
+  }
+
   ExecutionStatus server_status = clean_up_connection(*connection);
   mysql_close(&(*connection));
-  return server_status;
+  return rows;
 }
 
 void MySQLClient::clean_up_env() {
