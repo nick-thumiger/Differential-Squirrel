@@ -73,25 +73,35 @@ std::string MySQLClient::execute(const char *query, size_t size) {
     std::cerr << "Cannot mySQL_QUERY " << std::endl;
     return "kServerCrash";
   }
-
-  MYSQL_RES *result = mysql_store_result(&(*connection));
-  
   std::string rows;
-  if (result) {  // a SELECT query, rows were returned
-    MYSQL_ROW row;
-    while ((row = mysql_fetch_row(result))) {
-      unsigned long *lengths = mysql_fetch_lengths(result);
-      for (unsigned int i = 0; i < mysql_num_fields(result); i++) {
-        rows += std::string(row[i], lengths[i]);
+
+  bool more;
+  bool first = true;
+  do {
+    int status;
+    if (!first)
+      status = mysql_next_result(&(*connection));
+    first = false;
+
+    int affected_rows = mysql_affected_rows(&(*connection));
+    MYSQL_RES *result = mysql_store_result(&(*connection));
+    
+    rows += std::to_string(affected_rows) + " ";
+    if (result) {  // a SELECT query, rows were returned
+      MYSQL_ROW row;
+      while ((row = mysql_fetch_row(result))) {
+        unsigned long *lengths = mysql_fetch_lengths(result);
+        for (unsigned int i = 0; i < mysql_num_fields(result); i++) {
+          rows += std::string(row[i], lengths[i]);
+        }
       }
     }
-    mysql_free_result(result);
-    mysql_close(&(*connection));
-  } else {
-    int affected_rows = mysql_affected_rows(&(*connection));
-    rows = std::to_string(affected_rows);
-  }
 
+
+    mysql_free_result(result);
+    
+    more = mysql_more_results(&(*connection));
+  } while (more);
   ExecutionStatus server_status = clean_up_connection(*connection);
   mysql_close(&(*connection));
   return rows;
