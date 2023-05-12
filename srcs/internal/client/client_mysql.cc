@@ -73,9 +73,9 @@ std::string MySQLClient::execute(const char *query, size_t size) {
     std::cerr << "Cannot mySQL_QUERY " << std::endl;
     return "kServerCrash";
   }
-  std::string rows;
+  std::string rows = "";
 
-  bool more;
+  bool more = false;
   bool first = true;
   do {
     int status;
@@ -89,6 +89,7 @@ std::string MySQLClient::execute(const char *query, size_t size) {
     rows += std::to_string(affected_rows) + " ";
     if (result) {  // a SELECT query, rows were returned
       MYSQL_ROW row;
+      rows +=  " SELECT ret: ";
       while ((row = mysql_fetch_row(result))) {
         unsigned long *lengths = mysql_fetch_lengths(result);
         for (unsigned int i = 0; i < mysql_num_fields(result); i++) {
@@ -97,16 +98,83 @@ std::string MySQLClient::execute(const char *query, size_t size) {
       }
     }
 
+    mysql_free_result(result);
+    
+    more = mysql_more_results(&(*connection));
+  } while (more);
+
+  //Check db internal status
+   const std::string sql_cmd_status = "SHOW TABLES;";
+
+  server_response = mysql_real_query(&(*connection), sql_cmd_status.c_str(), sql_cmd_status.size());
+  if (is_crash_response(server_response)) {
+    std::cerr << "Cannot mySQL_QUERY " << std::endl;
+    return "kServerCrash";
+  }
+
+  std::vector<std::string> tables;
+  first = true;
+  do {
+    int status;
+    if (!first)
+      status = mysql_next_result(&(*connection));
+    first = false;
+
+    int affected_rows = mysql_affected_rows(&(*connection));
+    MYSQL_RES *result = mysql_store_result(&(*connection));
+    if (result) {  // a SELECT query, rows were returned
+      MYSQL_ROW row;
+      while ((row = mysql_fetch_row(result))) {
+        unsigned long *lengths = mysql_fetch_lengths(result);
+        for (unsigned int i = 0; i < mysql_num_fields(result); i++) {
+          cout << std::string(row[i], lengths[i]);
+          tables.push_back(std::string(row[i], lengths[i]));
+        }
+      }
+    }
 
     mysql_free_result(result);
     
     more = mysql_more_results(&(*connection));
   } while (more);
+
+  std::string res = rows + "\n Inner db: ";
+  std::string query_table = "";
+  for (const auto table : tables){
+    query_table += "SELECT * FROM " + table + ";";
+  }
+  server_response = mysql_real_query(&(*connection), query_table.c_str(), query_table.size());
+  if (is_crash_response(server_response)) {
+    std::cerr << "Cannot mySQL_QUERY " << std::endl;
+    return "kServerCrash";
+  }
+  first = true;
+  do {
+    int status;
+    if (!first)
+      status = mysql_next_result(&(*connection));
+    first = false;
+    int affected_rows = mysql_affected_rows(&(*connection));
+    MYSQL_RES *result = mysql_store_result(&(*connection));
+    if (result) {  // a SELECT query, rows were returned
+      MYSQL_ROW row;
+      while ((row = mysql_fetch_row(result))) {
+        unsigned long *lengths = mysql_fetch_lengths(result);
+        for (unsigned int i = 0; i < mysql_num_fields(result); i++) {
+          res += std::string(row[i], lengths[i]);
+        }
+      }
+    }
+    mysql_free_result(result);
+    more = mysql_more_results(&(*connection));
+  } while (more);
+  
+
+
   ExecutionStatus server_status = clean_up_connection(*connection);
   mysql_close(&(*connection));
-  return rows;
+  return res;
 }
-
 void MySQLClient::clean_up_env() {
   std::string database_name = db_prefix_ + std::to_string(database_id_);
   string reset_query = "DROP DATABASE IF EXISTS " + database_name + ";";

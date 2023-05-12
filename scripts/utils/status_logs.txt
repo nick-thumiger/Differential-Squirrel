@@ -1,0 +1,94 @@
+Query 
+CREATE TABLE t1(a INTEGER, b INTEGER, c INTEGER);
+INSERT INTO t1 VALUES(1, 1, 1);
+INSERT INTO t1 VALUES(1, 2, 2);
+SELECT c, sum(c) OVER win1 FROM t1 WINDOW win1 AS (ORDER BY b);
+
+First Status: 0 1 1 -1  SELECT ret: 1123
+ Inner db: 111122
+Status: -1 
+ Inner db: 1111223-1
+
+Query 
+CREATE TABLE v0 ( v1 INT , v2 INT , v3 INT CONSTRAINT xx CHECK ( v3 ) ) ;
+create index x on v0(v2, v3);
+insert into x(v3) values(1),(2);
+UPDATE v0 SET v3 = NULL ;
+select v3 from x;
+
+First Status: -1 
+ Inner db: 
+Status: -1 
+ Inner db: 3-1
+
+Query 
+CREATE TABLE t1(a INTEGER, b INTEGER, c INTEGER);
+INSERT INTO t1 VALUES(1, 1, 1);
+INSERT INTO t1 VALUES(1, 2, 2);
+SELECT c, sum(c) OVER win1 FROM t1 WINDOW win1 AS (ORDER BY b);
+
+First Status: 0 1 1 -1  SELECT ret: 1123
+ Inner db: 111122
+Status: -1 
+ Inner db: 1111223-1
+
+Query 
+CREATE TABLE v0 ( v1 INT , v2 INT , v3 INT CONSTRAINT xx CHECK ( v3 ) ) ;
+create index x on v0(v2, v3);
+insert into x(v3) values(1),(2);
+UPDATE v0 SET v3 = NULL ;
+select v3 from x;
+
+First Status: -1 
+ Inner db: 
+Status: -1 
+ Inner db: 3-1
+
+Query 
+CREATE TABLE v0 ( v1 INT , v2 CHAR ) ;
+ CREATE VIEW v5 AS SELECT * , LEAD ( v2 ) AS v3 , - v2 = 69 AS v4 FROM v0 , v0 WHERE v1 = 'x' ;
+ CREATE VIEW v6 AS SELECT v1 + -128 FROM v5 WHERE v1 < 85 ;
+ DROP TABLE v6 ;
+ INSERT INTO v5 VALUES ( 40 ) ;
+ 
+First Status: 0 -1 
+ Inner db: 
+Status: -1 
+ Inner db: 
+
+Query 
+CREATE TABLE v0 ( v1 INT , v2 CHAR ) ;
+ CREATE VIEW v5 AS SELECT * , STD ( v1 ) AS v3 , ( SELECT RANK ( v1 ) FROM v0 , v0 USING ( v2 ) WHERE v1 = v1 ) AS v4 FROM v0 , v0 WHERE v2 = 'x' ;
+ CREATE VIEW v6 AS SELECT DISTINCT SUM ( 27179182.000000 , 80447073.000000 ) * COUNT ( 50732915.000000 , 75499220.000000 ) FROM v0 WHERE v2 < 38 ;
+ DROP TABLE v6 ;
+ INSERT INTO v0 VALUES ( 0 ) ;
+ 
+First Status: 0 -1 
+ Inner db: 
+Status: -1 
+ Inner db: 
+
+Query 
+CREATE TABLE v0 ( v1 INT , v2 CHAR ) ;
+ CREATE VIEW v5 AS SELECT * , LAG ( v2 ) AS v3 , ( SELECT MAX ( v2 ) FROM v0 , v0 WHERE v1 = v1 ) AS v4 FROM v0 , v0 WHERE v1 = 'x' ;
+ CREATE VIEW v6 AS SELECT PERCENT_RANK ( v2 * v2 ) OVER ( ) FROM v5 ;
+ DROP TABLE v5 ;
+ INSERT INTO v0 VALUES ( 25 ) ;
+ 
+First Status: 0 -1 
+ Inner db: 
+Status: -1 
+ Inner db: 3-1
+
+Query 
+CREATE TABLE v0 ( v1 INT , v2 CHAR ) ;
+ CREATE VIEW v5 AS SELECT * , JSON_OBJECTAGG ( TRUE ) AS v3 , ( SELECT COUNT ( v2 ) FROM v0 , v0 WHERE v2 = v1 ) AS v4 FROM v0 , v0 WHERE v1 = 'x' ;
+ CREATE VIEW v6 AS SELECT v1 + 25 FROM v0 WHERE v2 < 88 ;
+ DROP TABLE v6 ;
+ INSERT INTO v5 VALUES ( 93 ) ;
+ 
+First Status: 0 -1 
+ Inner db: 
+Status: -1 
+ Inner db: 
+

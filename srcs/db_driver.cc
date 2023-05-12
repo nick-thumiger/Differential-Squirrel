@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <fstream>
 
 #include <memory>
 #include <iostream>
@@ -204,23 +205,9 @@ int main(int argc, char *argv[]) {
   __afl_start_forkserver();
 
   while ((len = __afl_next_testcase(buf, kMaxInputSize)) > 0) {
-/*const char* sql_cmd = "CREATE TABLE v0 ( v1 INT ) ;"
-                      "INSERT INTO v0 ( v1 ) VALUES ( -1 ) ;"
-                      "UPDATE v0 SET v1 = 16 WHERE v1 = 80 ;"
-                      "INSERT INTO v0 ( v1 ) VALUES ( 874775.000000 ) , ( -1 ) ;"
-                      "SELECT STDDEV_SAMP ( v1 ) OVER w , NTILE ( v1 ) OVER w FROM v0 WINDOW v2 AS ( PARTITION BY v1 ORDER BY v1 DESC ) ;"
-                      "SELECT * FROM v0;" ;
-
-    size_t len = std::strlen(sql_cmd) + 1; // +1 for the null-terminating character
-
-    char* buf = new char[len]; // dynamically allocate memory for buf
-
-    std::strcpy(buf, sql_cmd); // copy the SQL command into buf
-*/
-    //std::string query((const char *)buf, len); // create the query string
-    std::string status;
-
+    std::string status = "kNormal";
     std::string first_status = "";
+    std::string query((const char *)buf, len);
 
     for (const auto database : databases){
       database->prepare_env();
@@ -230,6 +217,17 @@ int main(int argc, char *argv[]) {
       if (first_status == "") {
         first_status = status;
       } else if (status != first_status) {
+            // Write to the file
+        std::ofstream outFile;
+        outFile.open("status_logs.txt", std::ios_base::app);
+        outFile << "Query \n";
+        outFile.write((const char *)buf, len);
+        outFile << "\n";
+        outFile << "First Status: " << first_status << "\n";
+        outFile << "Status: " << status << "\n";
+        outFile << "\n";
+        outFile.close(); 
+
         status = "kServerCrash";
         break;
       }
@@ -250,7 +248,6 @@ int main(int argc, char *argv[]) {
 
     // TODO change which status variable is received
     __afl_end_testcase(status);
-    delete[] buf;
   }
   assert(false && "Crash on parent?");
 
